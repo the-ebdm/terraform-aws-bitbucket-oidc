@@ -1,0 +1,26 @@
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Format terraform
+          image: hashicorp/terraform:full
+          script:
+            - terraform fmt 
+      - step:
+          name: Generate docs
+          image: cytopia/terraform-docs:latest
+          script:
+            - |
+              terraform-docs markdown table --output-file README.md --output-mode inject .
+          artifacts:
+            - README.md
+      - step:
+          name: Commit new docs
+          script:
+            - |
+              if [ $(git diff --exit-code --quiet README.md; echo $?) == "1" ]; then
+                echo "README has changed; commiting"
+                git add README.md
+                git commit -m "[CI] Auto-updated Docs - $(date)"
+                git push -u origin master
+              fi
